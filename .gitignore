@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# OS / local
+.DS_Store
+
+# Large / regenerated model artifacts (GitHub 100MB limit)
+c2c_output/**/*.safetensors
+mlx_models/
+
+# Runtime logs
+logs/
+
+# Hugging Face
+.hf/
+
+# miscellaneous
+.env
+docs/
+.cursor/
+.cursorrules
+notebooks/NVIDIA_DGX_Spark_hugging_face_llm_full_fine_tune_tutorial_VIDEO.ipynb
+scripts/c2c_predict_eval_cell.py
+scripts/c2c_qlora_training_cell.py
+scripts/infer_c2c.py

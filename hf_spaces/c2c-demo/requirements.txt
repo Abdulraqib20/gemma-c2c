@@ -1,0 +1,12 @@
+# GPU Space: enable CUDA hardware in Space settings (T4 or better recommended).
+# Python 3.13+ dropped stdlib `audioop`; Gradio/pydub otherwise error with "No module named 'pyaudioop'".
+audioop-lts>=0.2.1; python_version >= "3.13"
+gradio>=4.44.0,<6
+transformers>=4.51.0
+accelerate>=1.0.0
+peft>=0.14.0
+bitsandbytes>=0.44.0
+torch>=2.5.0
+safetensors>=0.4.0
+pyyaml>=6.0.1
+huggingface_hub>=0.26.0

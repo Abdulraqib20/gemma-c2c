@@ -1,0 +1,81 @@
+{
+  "config": {
+    "expected_train": 800,
+    "expected_test": 200,
+    "expected_non_actionable_ratio": 0.3,
+    "expected_business_ratio": 0.5,
+    "ratio_tolerance": 0.02,
+    "max_tasks": 3,
+    "near_dup_threshold": 0.92,
+    "enforce_domain_ratio_check": false
+  },
+  "summary": {
+    "train": {
+      "total": 800,
+      "is_act": {
+        "0": 240,
+        "1": 560
+      },
+      "intent": {
+        "remind": 275,
+        "notify": 132,
+        "schedule": 261,
+        "log": 132
+      },
+      "domain_estimate": {
+        "personal": 276,
+        "unknown": 199,
+        "business": 325
+      },
+      "avg_tasks_per_record": 1.413
+    },
+    "test": {
+      "total": 200,
+      "is_act": {
+        "0": 60,
+        "1": 140
+      },
+      "intent": {
+        "log": 34,
+        "schedule": 83,
+        "notify": 32,
+        "remind": 51
+      },
+      "domain_estimate": {
+        "personal": 70,
+        "business": 83,
+        "unknown": 47
+      },
+      "avg_tasks_per_record": 1.46
+    },
+    "all": {
+      "total": 1000,
+      "is_act": {
+        "0": 300,
+        "1": 700
+      },
+      "intent": {
+        "remind": 326,
+        "notify": 164,
+        "schedule": 344,
+        "log": 166
+      },
+      "domain_estimate": {
+        "personal": 346,
+        "unknown": 246,
+        "business": 408
+      },
+      "avg_tasks_per_record": 1.422
+    },
+    "duplicates": {
+      "train_exact": 0,
+      "test_exact": 0,
+      "cross_exact": 0,
+      "cross_near": 0
+    },
+    "actual_non_actionable_ratio": 0.3,
+    "actual_business_ratio_estimated": 0.541
+  },
+  "issues": [],
+  "pass": true
+}

@@ -1,0 +1,65 @@
+{
+  "config": {
+    "train": 800,
+    "test": 200,
+    "non_actionable_ratio": 0.3,
+    "business_ratio": 0.5,
+    "max_tasks": 3,
+    "seed": 42,
+    "near_dup_threshold": 0.92
+  },
+  "all": {
+    "total": 1000,
+    "intent_distribution": {
+      "remind": 326,
+      "schedule": 344,
+      "notify": 164,
+      "log": 166
+    },
+    "is_act_distribution": {
+      "0": 300,
+      "1": 700
+    },
+    "domain_distribution": {
+      "personal": 500,
+      "business": 500
+    },
+    "avg_tasks_per_record": 1.422
+  },
+  "train": {
+    "total": 800,
+    "intent_distribution": {
+      "remind": 275,
+      "notify": 132,
+      "schedule": 261,
+      "log": 132
+    },
+    "is_act_distribution": {
+      "0": 240,
+      "1": 560
+    },
+    "domain_distribution": {
+      "personal": 400,
+      "business": 400
+    },
+    "avg_tasks_per_record": 1.413
+  },
+  "test": {
+    "total": 200,
+    "intent_distribution": {
+      "log": 34,
+      "schedule": 83,
+      "notify": 32,
+      "remind": 51
+    },
+    "is_act_distribution": {
+      "0": 60,
+      "1": 140
+    },
+    "domain_distribution": {
+      "personal": 100,
+      "business": 100
+    },
+    "avg_tasks_per_record": 1.46
+  }
+}
