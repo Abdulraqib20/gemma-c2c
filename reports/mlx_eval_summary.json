@@ -1,0 +1,19 @@
+{
+  "model": "mlx_models/c2c-gemma4-e4b-it-4bit",
+  "data": "data/test.jsonl",
+  "count": 200,
+  "settings": {
+    "max_tokens": 220,
+    "temp": 0.0,
+    "top_p": 1.0,
+    "repair_schema": true
+  },
+  "metrics": {
+    "parse_rate": 1.0,
+    "schema_rate": 1.0,
+    "is_act_accuracy": 1.0,
+    "intent_accuracy": 0.56,
+    "task_count_accuracy": 1.0,
+    "exact_match": 0.255
+  }
+}

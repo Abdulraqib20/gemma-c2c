@@ -1,0 +1,23 @@
+# C2C Local M1 Gradio Demo
+
+Run this app locally on your Mac (Apple Silicon) after MLX conversion.
+
+## Install
+
+```bash
+conda run -n ai pip install -r spaces/local-c2c-m1/requirements.txt
+```
+
+## Launch
+
+```bash
+conda run -n ai python spaces/local-c2c-m1/app.py
+```
+
+Then open `http://127.0.0.1:7860` in your browser.
+
+## Notes
+
+- Default model path is `mlx_models/c2c-gemma4-e4b-it-4bit`.
+- You can change model path in the UI.
+- The app includes optional schema-repair postprocessing.
