@@ -30,7 +30,7 @@ flowchart LR
 |--------|--------|---------|
 | Data | `data/*.jsonl` | `generate_c2c_data.py`, `validate_c2c_data.py` |
 | Train | Cloud notebook / GPU | `c2c_qlora_training_cell.py` (cells for TRL `SFTTrainer`) |
-| Eval | Same | `c2c_predict_eval_cell.py`, `infer_c2c.py` |
+| Eval | Notebook GPU / Mac MLX | `c2c_predict_eval_cell.py`, `eval_c2c_mlx.py` |
 | Fuse | Local or Kaggle | `fuse_c2c_adapter.py` |
 | Apple Silicon | Mac | `convert_fused_to_mlx.py` → `demo_c2c_mlx.py` |
 | Hosted demo | Hugging Face | `hf_spaces/c2c-demo/` |
@@ -77,8 +77,9 @@ For a full **no-retrain** Hub → fuse → MLX walkthrough (including Kaggle-sty
 | `scripts/validate_c2c_data.py` | Quality checks on datasets |
 | `scripts/fuse_c2c_adapter.py` | Merge LoRA into full HF weights; optional Hub push |
 | `scripts/convert_fused_to_mlx.py` | Quantize fused model to MLX (default 4-bit) |
+| `scripts/c2c_mlx_core.py` | Shared MLX prompt / generate / repair (used by demo, eval) |
 | `scripts/demo_c2c_mlx.py` | Local inference with `mlx-lm` |
-| `scripts/infer_c2c.py` | HF/PEFT inference helper |
+| `scripts/eval_c2c_mlx.py` | MLX eval metrics on `data/test.jsonl` → `reports/` |
 | `scripts/c2c_qlora_training_cell.py` | Notebook-oriented training cells |
 | `scripts/c2c_predict_eval_cell.py` | Notebook-oriented eval cells |
 

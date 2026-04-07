@@ -46,7 +46,7 @@ def infer(
 ):
     text = (messy_text or "").strip()
     if not text:
-        return "Please enter a message.", "", ""
+        return "Please enter a message.", ""
 
     model, tokenizer = get_model_and_tokenizer(MODEL_PATH)
     yaml_text = run_once(
@@ -60,18 +60,40 @@ def infer(
         repair_schema=repair_schema,
     )
 
-    parsed = ""
-    status = "YAML generated."
+    status = "YAML generated (normalized)."
     try:
         obj = yaml.safe_load(yaml_text)
-        parsed = yaml.safe_dump(obj, sort_keys=False, allow_unicode=False).strip()
+        display = yaml.safe_dump(obj, sort_keys=False, allow_unicode=False).strip()
     except yaml.YAMLError as exc:
-        status = f"YAML parse failed: {exc}"
+        status = f"YAML parse failed (showing raw model text): {exc}"
+        display = yaml_text.strip()
 
-    return status, yaml_text, parsed
+    return status, display
 
 
-with gr.Blocks(title="C2C M1 Local Demo", theme=gr.themes.Soft()) as demo:
+# System / browser default fonts (no theme webfonts). YAML panel uses system monospace.
+_DEFAULT_UI_FONT = (
+    'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, '
+    '"Helvetica Neue", Helvetica, Arial, sans-serif'
+)
+_DEFAULT_MONO = (
+    'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, '
+    '"Liberation Mono", monospace'
+)
+_APP_CSS = f"""
+.gradio-container {{
+  font-family: {_DEFAULT_UI_FONT} !important;
+}}
+.gradio-container pre, .gradio-container code, .cm-content {{
+  font-family: {_DEFAULT_MONO} !important;
+}}
+"""
+
+with gr.Blocks(
+    title="C2C M1 Local Demo",
+    theme=gr.themes.Default(),
+    css=_APP_CSS,
+) as demo:
     gr.Markdown("# C2C Gemma 4 Local Demo (MLX on Apple Silicon)")
     gr.Markdown(
         "Paste messy text and get strict C2C YAML extraction. "
@@ -99,13 +121,12 @@ with gr.Blocks(title="C2C M1 Local Demo", theme=gr.themes.Soft()) as demo:
     run_btn = gr.Button("Extract YAML", variant="primary")
 
     status = gr.Textbox(label="Status", interactive=False)
-    yaml_out = gr.Code(label="YAML output", language="yaml")
-    parsed_out = gr.Code(label="Parsed object (normalized YAML)", language="yaml")
+    yaml_out = gr.Code(label="C2C YAML", language="yaml")
 
     run_btn.click(
         fn=infer,
         inputs=[messy_text, max_tokens, temp, top_p, repair_schema],
-        outputs=[status, yaml_out, parsed_out],
+        outputs=[status, yaml_out],
     )
 
 

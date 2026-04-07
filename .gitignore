@@ -26,7 +26,3 @@ logs/
 docs/
 .cursor/
 .cursorrules
-# notebooks/NVIDIA_DGX_Spark_hugging_face_llm_full_fine_tune_tutorial_VIDEO.ipynb
-# scripts/c2c_predict_eval_cell.py
-# scripts/c2c_qlora_training_cell.py
-# scripts/infer_c2c.py

@@ -18,6 +18,6 @@ Then open `http://127.0.0.1:7860` in your browser.
 
 ## Notes
 
-- Default model path is `mlx_models/c2c-gemma4-e4b-it-4bit`.
-- You can change model path in the UI.
-- The app includes optional schema-repair postprocessing.
+- Default model path is `mlx_models/c2c-gemma4-e4b-it-4bit` (repo root). Override with env `C2C_MLX_MODEL` if needed.
+- The UI shows one **C2C YAML** panel: normalized via PyYAML when parse succeeds; on parse failure, raw model text is shown and **Status** explains the error.
+- Optional schema-repair runs inside `run_once` when the checkbox is enabled.
