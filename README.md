@@ -26,14 +26,13 @@ flowchart LR
   D --> F[Gradio Space / Transformers inference]
 ```
 
-| Stage | Where | Tooling |
-|--------|--------|---------|
-| Data | `data/*.jsonl` | `generate_c2c_data.py`, `validate_c2c_data.py` |
-| Train | Cloud notebook / GPU | `c2c_qlora_training_cell.py` (cells for TRL `SFTTrainer`) |
-| Eval | Notebook GPU / Mac MLX | `c2c_predict_eval_cell.py`, `eval_c2c_mlx.py` |
-| Fuse | Local or Kaggle | `fuse_c2c_adapter.py` |
-| Apple Silicon | Mac | `convert_fused_to_mlx.py` → `demo_c2c_mlx.py` |
-| Hosted demo | Hugging Face | `hf_spaces/c2c-demo/` |
+| Stage         | Where                  | Tooling                                                       |
+| ------------- | ---------------------- | ------------------------------------------------------------- |
+| Data          | `data/*.jsonl`       | `generate_c2c_data.py`, `validate_c2c_data.py`            |
+| Train         | Notebook   | `notebooks/c2c-gemma4-e4b-it-qlora-training.ipynb` |
+| Eval          |  Mac MLX | `eval_c2c_mlx.py`             |
+| Fuse          | Local or Kaggle        | `fuse_c2c_adapter.py`                                       |
+| Apple Silicon | Mac                    | `convert_fused_to_mlx.py` → `demo_c2c_mlx.py`            |
 
 ## Requirements
 
@@ -71,21 +70,15 @@ For a full **no-retrain** Hub → fuse → MLX walkthrough (including Kaggle-sty
 
 ## Scripts (reference)
 
-| Script | Role |
-|--------|------|
-| `scripts/generate_c2c_data.py` | Build or augment `jsonl` training/eval data |
-| `scripts/validate_c2c_data.py` | Quality checks on datasets |
-| `scripts/fuse_c2c_adapter.py` | Merge LoRA into full HF weights; optional Hub push |
-| `scripts/convert_fused_to_mlx.py` | Quantize fused model to MLX (default 4-bit) |
-| `scripts/c2c_mlx_core.py` | Shared MLX prompt / generate / repair (used by demo, eval) |
-| `scripts/demo_c2c_mlx.py` | Local inference with `mlx-lm` |
-| `scripts/eval_c2c_mlx.py` | MLX eval metrics on `data/test.jsonl` → `reports/` |
-| `scripts/c2c_qlora_training_cell.py` | Notebook-oriented training cells |
-| `scripts/c2c_predict_eval_cell.py` | Notebook-oriented eval cells |
-
-## Hugging Face Space
-
-The Gradio app under `hf_spaces/c2c-demo/` loads **Gemma 4 E4B** plus a **LoRA adapter** from the Hub (configurable via env vars). See that folder’s `README.md` for deployment notes.
+| Script                              | Role                                                       |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `scripts/generate_c2c_data.py`    | Build or augment `jsonl` training/eval data              |
+| `scripts/validate_c2c_data.py`    | Quality checks on datasets                                 |
+| `scripts/fuse_c2c_adapter.py`     | Merge LoRA into full HF weights; optional Hub push         |
+| `scripts/convert_fused_to_mlx.py` | Quantize fused model to MLX (default 4-bit)                |
+| `scripts/c2c_mlx_core.py`         | Shared MLX prompt / generate / repair (used by demo, eval) |
+| `scripts/demo_c2c_mlx.py`         | Local inference with `mlx-lm`                            |
+| `scripts/eval_c2c_mlx.py`         | MLX eval metrics on `data/test.jsonl` → `reports/`    |
 
 ## Project layout
 
@@ -98,7 +91,3 @@ The Gradio app under `hf_spaces/c2c-demo/` loads **Gemma 4 E4B** plus a **LoRA a
 ├── scripts/           # CLI utilities (train, fuse, mlx, data)
 └── c2c_output/        # local adapter artifacts (if present)
 ```
-
-## Acknowledgments
-
-Built with [Google Gemma](https://ai.google.dev/gemma), [Hugging Face Transformers](https://huggingface.co/docs/transformers), [PEFT](https://huggingface.co/docs/peft), and [MLX](https://github.com/ml-explore/mlx) for Apple Silicon inference.
