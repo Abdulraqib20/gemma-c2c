@@ -5,13 +5,13 @@ Run this app locally on your Mac (Apple Silicon) after MLX conversion.
 ## Install
 
 ```bash
-conda run -n ai pip install -r spaces/local-c2c-m1/requirements.txt
+conda run -n ai pip install -r spaces/requirements.txt
 ```
 
 ## Launch
 
 ```bash
-conda run -n ai python spaces/local-c2c-m1/app.py
+conda run -n ai python spaces/app.py
 ```
 
 Then open `http://127.0.0.1:7860` in your browser.

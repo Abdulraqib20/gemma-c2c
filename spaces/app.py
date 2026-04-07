@@ -1,26 +1,18 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import gradio as gr
 import yaml
 from mlx_lm import load
 
-import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from scripts.c2c_mlx_core import run_once
 
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
-
-from c2c_mlx_core import run_once
-
-DEFAULT_MODEL = str(ROOT / "mlx_models" / "c2c-gemma4-e4b-it-4bit")
-# Override without exposing in the UI: C2C_MLX_MODEL=/path/to/mlx_model
+DEFAULT_MODEL = str(Path(__file__).resolve().parent.parent / "mlx_models" / "c2c-gemma4-e4b-it-4bit")
 MODEL_PATH = os.environ.get("C2C_MLX_MODEL", DEFAULT_MODEL).strip()
-
 STATE = {
     "model_path": None,
     "model": None,
