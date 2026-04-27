@@ -228,6 +228,28 @@ def main() -> int:
 
     fused_model = peft_model.merge_and_unload()
 
+    input_embeddings = (
+        fused_model.get_input_embeddings()
+        if hasattr(fused_model, "get_input_embeddings")
+        else None
+    )
+    output_embeddings = (
+        fused_model.get_output_embeddings()
+        if hasattr(fused_model, "get_output_embeddings")
+        else None
+    )
+    if (
+        input_embeddings is not None
+        and output_embeddings is not None
+        and hasattr(input_embeddings, "weight")
+        and hasattr(output_embeddings, "weight")
+        and input_embeddings.weight.data_ptr() == output_embeddings.weight.data_ptr()
+    ):
+        fused_model.config.tie_word_embeddings = True
+        text_config = getattr(fused_model.config, "text_config", None)
+        if text_config is not None and hasattr(text_config, "tie_word_embeddings"):
+            text_config.tie_word_embeddings = True
+
     print("Saving fused model + tokenizer...")
     fused_model.save_pretrained(
         str(output_dir),

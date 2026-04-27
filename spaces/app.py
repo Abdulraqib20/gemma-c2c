@@ -11,7 +11,11 @@ from mlx_lm import load
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from scripts.c2c_mlx_core import run_once
 
-DEFAULT_MODEL = str(Path(__file__).resolve().parent.parent / "mlx_models" / "c2c-gemma4-e4b-it-4bit")
+DEFAULT_MODEL = str(
+    Path(__file__).resolve().parent.parent
+    / "mlx_models"
+    / "c2c-gemma4-e4b-it-4bit-v3-local"
+)
 MODEL_PATH = os.environ.get("C2C_MLX_MODEL", DEFAULT_MODEL).strip()
 STATE = {
     "model_path": None,
@@ -81,11 +85,7 @@ _APP_CSS = f"""
 }}
 """
 
-with gr.Blocks(
-    title="C2C M1 Local Demo",
-    theme=gr.themes.Default(),
-    css=_APP_CSS,
-) as demo:
+with gr.Blocks(title="C2C M1 Local Demo") as demo:
     gr.Markdown("# C2C Gemma 4 Local Demo (MLX on Apple Silicon)")
     gr.Markdown(
         "Paste messy text and get strict C2C YAML extraction. "
@@ -123,4 +123,9 @@ with gr.Blocks(
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="127.0.0.1", server_port=7860)
+    demo.launch(
+        server_name="127.0.0.1",
+        server_port=7860,
+        theme=gr.themes.Default(),
+        css=_APP_CSS,
+    )

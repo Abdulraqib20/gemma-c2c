@@ -13,6 +13,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from mlx_lm import load
+
 from c2c_mlx_core import run_once
 
 
