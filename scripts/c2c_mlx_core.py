@@ -29,6 +29,16 @@ The user message after the '---' separator is messy human text to extract from."
 
 ALLOWED_INTENTS = {"remind", "schedule", "log", "notify"}
 ALLOWED_PRI = {"H", "M", "L"}
+TIME_LIKE_RE = re.compile(
+    r"\b(today|tomorrow|tonight|eod|eow|next|monday|tuesday|wednesday|thursday|"
+    r"friday|saturday|sunday|week|month|year|am|pm|\d{1,2}(:\d{2})?\s*(am|pm)|"
+    r"\d{4}-\d{2}-\d{2})\b",
+    re.IGNORECASE,
+)
+FOR_BY_IN_ACT_RE = re.compile(
+    r"^(?P<act>.+?)\s+for\s+(?P<who>.+?)\s+by\s+(?P<due>.+)$",
+    re.IGNORECASE,
+)
 
 
 def c2c_user_content(raw_user_text: str) -> str:
@@ -61,6 +71,22 @@ def clean_yaml_text(raw: str) -> str:
     return text
 
 
+def _looks_time_like(value: str) -> bool:
+    return bool(TIME_LIKE_RE.search(value))
+
+
+def _extract_for_by_from_act(act: str) -> tuple[str, str | None, str | None]:
+    match = FOR_BY_IN_ACT_RE.match(act.strip())
+    if not match:
+        return act, None, None
+    core_act = match.group("act").strip(" ,;:-")
+    who = match.group("who").strip(" ,;:-")
+    due = match.group("due").strip(" ,;:-")
+    if not core_act or not who or not due:
+        return act, None, None
+    return core_act, who, due
+
+
 def _sanitize_obj(obj: Any) -> dict[str, Any] | None:
     if not isinstance(obj, dict):
         return None
@@ -70,9 +96,9 @@ def _sanitize_obj(obj: Any) -> dict[str, Any] | None:
         is_act = int(is_act.strip())
     is_act = 1 if is_act == 1 else 0
 
-    intent = str(obj.get("intent", "remind")).strip().lower()
+    intent = str(obj.get("intent", "log")).strip().lower()
     if intent not in ALLOWED_INTENTS:
-        intent = "remind"
+        intent = "log"
 
     raw_tasks = obj.get("tasks", [])
     if not isinstance(raw_tasks, list):
@@ -86,6 +112,18 @@ def _sanitize_obj(obj: Any) -> dict[str, Any] | None:
         who = str(item.get("who", "")).strip()
         due = str(item.get("due", "")).strip()
         pri = str(item.get("pri", "M")).strip().upper()
+
+        # Recover "for <who> by <due>" that got absorbed into act.
+        fixed_act, extracted_who, extracted_due = _extract_for_by_from_act(act)
+        if extracted_who and extracted_due:
+            act = fixed_act
+            who = extracted_who
+            due = extracted_due
+
+        # If who field is clearly a time phrase and due is not, swap them.
+        if _looks_time_like(who) and not _looks_time_like(due):
+            who, due = due, who
+
         if not act or not who or not due:
             continue
         if pri not in ALLOWED_PRI:

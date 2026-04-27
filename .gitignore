@@ -14,6 +14,17 @@ build/
 # Large / regenerated model artifacts (GitHub 100MB limit)
 c2c_output/**/*.safetensors
 mlx_models/
+mlx_patches/
+
+# Generated training / evaluation artifacts
+c2c_output/adapter/
+c2c_output/reports/
+reports/
+*.bin
+
+# Notebook / Python local state
+.ipynb_checkpoints/
+**/__pycache__/
 
 # Runtime logs
 logs/

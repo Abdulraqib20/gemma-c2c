@@ -23,6 +23,9 @@ import yaml
 INTENTS: Tuple[str, ...] = ("remind", "schedule", "log", "notify")
 PRIORITIES: Tuple[str, ...] = ("H", "M", "L")
 DOMAINS: Tuple[str, ...] = ("business", "personal")
+NON_ACTIONABLE_INTENT = "log"
+GENERIC_WHO_CHOICES: Tuple[str, ...] = ("me", "Aisha", "Ken", "Alex", "Mina", "legal", "finance", "ops")
+POLITE_FILLERS: Tuple[str, ...] = ("pls", "please", "thanks", "if possible", "thx")
 
 BUSINESS_TASK_BANK: Tuple[Dict[str, Sequence[str]], ...] = (
     {
@@ -132,6 +135,144 @@ OPENERS: Dict[str, Tuple[str, ...]] = {
     ),
 }
 
+INTENT_PHRASES = {
+    "remind": (
+        "remind me to",
+        "can you remind me to",
+        "dont let me forget to",
+        "make sure i",
+        "remember to",
+    ),
+    "schedule": (
+        "schedule",
+        "book",
+        "set up",
+        "put on my calendar",
+        "move",
+    ),
+    "log": (
+        "log this",
+        "note down",
+        "track",
+        "record",
+        "capture",
+    ),
+    "notify": (
+        "ping",
+        "let",
+        "tell",
+        "message",
+        "notify",
+    ),
+}
+
+PRIORITY_CUES: Dict[str, Tuple[str, ...]] = {
+    "H": ("urgent", "high prio", "super important", "asap", "critical"),
+    "M": ("", "normal priority", "standard", "medium prio"),
+    "L": ("not urgent", "whenever", "low prio", "no rush", "backlog"),
+}
+
+INTENT_ACTION_BANKS: Dict[str, Dict[str, Tuple[Dict[str, str], ...]]] = {
+    "business": {
+        "remind": (
+            {"act": "send the revised invoice to Acme", "who": "me", "due": "tomorrow noon"},
+            {"act": "follow up on the unpaid invoice", "who": "me", "due": "Friday EOD"},
+            {"act": "review the contract redlines", "who": "me", "due": "this afternoon"},
+            {"act": "submit the expense report", "who": "me", "due": "end of week"},
+        ),
+        "schedule": (
+            {"act": "set up the deliverables meeting", "who": "Alex", "due": "Wednesday close of business"},
+            {"act": "book the roadmap review", "who": "ops", "due": "next Monday morning"},
+            {"act": "move standup to 9:30", "who": "me", "due": "tomorrow"},
+            {"act": "schedule the hiring panel", "who": "Aisha", "due": "Friday afternoon"},
+        ),
+        "log": (
+            {"act": "log the CRM notes from the client call", "who": "me", "due": "after lunch"},
+            {"act": "record the Q2 budget delta", "who": "finance", "due": "today"},
+            {"act": "track the procurement status on the laptop order", "who": "ops", "due": "end of week"},
+            {"act": "note down the sprint blockers", "who": "me", "due": "before standup"},
+        ),
+        "notify": (
+            {"act": "send the signed contract", "who": "legal", "due": "tomorrow 5pm sharp"},
+            {"act": "ping the team about moving standup", "who": "team", "due": "tomorrow"},
+            {"act": "share sprint status", "who": "product", "due": "today"},
+            {"act": "tell finance about the late invoice", "who": "finance", "due": "this afternoon"},
+        ),
+    },
+    "personal": {
+        "remind": (
+            {"act": "call the dentist", "who": "me", "due": "next Tuesday"},
+            {"act": "pay the electricity bill", "who": "me", "due": "tomorrow evening"},
+            {"act": "refill my gym membership", "who": "me", "due": "this weekend"},
+            {"act": "pick up the dry cleaning", "who": "me", "due": "after work"},
+        ),
+        "schedule": (
+            {"act": "book a haircut", "who": "me", "due": "Saturday morning"},
+            {"act": "schedule the car service", "who": "me", "due": "next week"},
+            {"act": "book the dentist appointment", "who": "me", "due": "Friday afternoon"},
+            {"act": "set up the study block", "who": "me", "due": "tonight"},
+        ),
+        "log": (
+            {"act": "track my weight update", "who": "me", "due": "Sunday night"},
+            {"act": "note down the medication refill count", "who": "me", "due": "tonight"},
+            {"act": "record the grocery spend", "who": "me", "due": "after the Saturday shop"},
+            {"act": "capture the landlord leak notes", "who": "me", "due": "after work"},
+        ),
+        "notify": (
+            {"act": "text the landlord about the leak", "who": "landlord", "due": "asap"},
+            {"act": "message Mom about Sunday plans", "who": "Mom", "due": "Friday"},
+            {"act": "tell my roommate about the rent transfer", "who": "roommate", "due": "tonight"},
+            {"act": "ping my trainer about the new gym time", "who": "trainer", "due": "tomorrow morning"},
+        ),
+    },
+}
+
+TARGETED_CASES: Tuple[Dict[str, object], ...] = (
+    {
+        "domain": "personal",
+        "intent": "remind",
+        "tasks": [{"act": "call the dentist", "who": "me", "due": "next Tuesday", "pri": "M"}],
+        "texts": (
+            "remind me call dentist pls sometime next week idk tuesday maybe",
+            "can you remind me to call the dentist next tuesday pls mom keeps asking",
+        ),
+    },
+    {
+        "domain": "business",
+        "intent": "notify",
+        "tasks": [{"act": "send the signed contract", "who": "legal", "due": "tomorrow 5pm sharp", "pri": "H"}],
+        "texts": (
+            "tell legal about the signed contract by tomorrow 5pm sharp",
+            "please tell legal about the signed contract by tomorrow 5pm sharp",
+        ),
+    },
+    {
+        "domain": "business",
+        "intent": "schedule",
+        "tasks": [{"act": "set up the meeting", "who": "boss", "due": "9pm ET", "pri": "H"}],
+        "texts": (
+            "lol yesterday my boss asked me to set up a meeting by 9pm ET for the next deliverables chat",
+            "set up a meeting for boss by 9pm ET re the next business deliverables",
+        ),
+    },
+    {
+        "domain": "personal",
+        "intent": "log",
+        "tasks": [
+            {
+                "act": "add bananas eggs coffee and that weird cheese Marc likes to the grocery list",
+                "who": "me",
+                "due": "Saturday shop",
+                "pri": "M",
+            }
+        ],
+        "texts": (
+            "yo add bananas eggs coffee and that weird cheese Marc likes to the list for saturday shop thanks",
+            "note down bananas eggs coffee and the weird cheese Marc likes for the saturday shop list",
+        ),
+    },
+)
+
 
 @dataclass
 class Sample:
@@ -238,28 +379,73 @@ def messify(text: str, rnd: random.Random) -> str:
     return re.sub(r"\s+", " ", result).strip()
 
 
-def pick_task(domain: str, rnd: random.Random) -> Dict[str, str]:
-    bank = BUSINESS_TASK_BANK[0] if domain == "business" else PERSONAL_TASK_BANK[0]
-    return {
-        "act": rnd.choice(tuple(bank["acts"])),
-        "who": rnd.choice(tuple(bank["who"])),
-        "due": rnd.choice(tuple(bank["due"])),
-        "pri": rnd.choice(PRIORITIES),
+def canonicalize_who(value: str) -> str:
+    clean = re.sub(r"\s+", " ", value.strip())
+    lowered = clean.lower()
+    alias = {
+        "myself": "me",
+        "i": "me",
+        "my": "me",
+        "dad": "Dad",
+        "mom": "Mom",
     }
+    return alias.get(lowered, clean)
 
 
-def infer_intent(tasks: Sequence[Dict[str, str]], rnd: random.Random) -> str:
-    if not tasks:
-        return rnd.choice(INTENTS)
+def choose_priority(rnd: random.Random) -> str:
+    return rnd.choices(PRIORITIES, weights=(0.2, 0.6, 0.2), k=1)[0]
 
-    acts = " ".join(task["act"].lower() for task in tasks)
-    if any(k in acts for k in ("schedule", "book", "appointment", "meeting", "kickoff")):
-        return "schedule"
-    if any(k in acts for k in ("log", "track", "update", "record")):
-        return "log"
-    if any(k in acts for k in ("message", "notify", "share", "call")):
-        return "notify"
-    return "remind"
+
+def pick_intent(is_act: int, rnd: random.Random) -> str:
+    if not is_act:
+        return NON_ACTIONABLE_INTENT
+    return rnd.choices(INTENTS, weights=(0.3, 0.25, 0.2, 0.25), k=1)[0]
+
+
+def pick_task(domain: str, intent: str, rnd: random.Random) -> Dict[str, str]:
+    base = dict(rnd.choice(INTENT_ACTION_BANKS[domain][intent]))
+    base["who"] = canonicalize_who(base["who"])
+    base["pri"] = choose_priority(rnd)
+    return base
+
+
+def sample_unique_tasks(
+    domain: str,
+    intent: str,
+    task_count: int,
+    rnd: random.Random,
+) -> List[Dict[str, str]]:
+    tasks: List[Dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    attempts = 0
+    max_attempts = max(12, task_count * 10)
+
+    while len(tasks) < task_count and attempts < max_attempts:
+        attempts += 1
+        task = pick_task(domain, intent, rnd)
+        key = (task["act"], task["who"], task["due"])
+        if key in seen:
+            continue
+        seen.add(key)
+        tasks.append(task)
+
+    if len(tasks) < task_count:
+        raise RuntimeError(
+            f"Could not sample {task_count} unique tasks for domain={domain} intent={intent}"
+        )
+    return tasks
+
+
+def maybe_make_targeted_sample(domain: str, is_act: int, rnd: random.Random) -> Sample | None:
+    if not is_act or rnd.random() >= 0.28:
+        return None
+    candidates = [case for case in TARGETED_CASES if case["domain"] == domain]
+    case = rnd.choice(candidates)
+    tasks = [dict(task) for task in case["tasks"]]  # shallow copy
+    label_obj = {"is_act": 1, "intent": case["intent"], "tasks": tasks}
+    label = canonical_yaml(label_obj)
+    text = messify(rnd.choice(case["texts"]), rnd)
+    return Sample(text=text, label=label, domain=domain, is_act=1)
 
 
 def render_actionable_text(
@@ -270,6 +456,7 @@ def render_actionable_text(
 ) -> str:
     opener = rnd.choice(OPENERS[domain])
     chunks: List[str] = [opener]
+    intent_phrase = rnd.choice(INTENT_PHRASES[intent])
 
     for idx, task in enumerate(tasks, start=1):
         connectors = (
@@ -277,20 +464,51 @@ def render_actionable_text(
             "and",
             "plus",
             "one more",
-            "dont let me miss",
             "need this too",
+            "adding one more",
         )
-        prefix = rnd.choice(connectors) if idx > 1 else rnd.choice(("", "please", "can you", "remind me to"))
+        if idx == 1:
+            prefix = intent_phrase
+        else:
+            prefix = rnd.choice(connectors)
 
-        line = f"{prefix} {task['act']} for {task['who']} by {task['due']}"
-        if task["pri"] == "H":
-            line += rnd.choice((" high prio", " urgent", " super important"))
-        elif task["pri"] == "L":
-            line += rnd.choice((" low prio", " not urgent", " whenever"))
+        if intent == "notify":
+            if prefix in ("let", "tell"):
+                line = f"{prefix} {task['who']} know about {task['act']} by {task['due']}"
+            elif prefix == "message":
+                line = f"message {task['who']} about {task['act']} by {task['due']}"
+            else:
+                line = f"{prefix} {task['who']} about {task['act']} by {task['due']}"
+        elif intent == "schedule":
+            variants = (
+                f"{prefix} {task['act']} for {task['who']} by {task['due']}",
+                f"{prefix} {task['act']} by {task['due']} for {task['who']}",
+                f"{prefix} {task['act']} and keep {task['who']} on it by {task['due']}",
+            )
+            line = rnd.choice(variants)
+        elif intent == "log":
+            variants = (
+                f"{prefix} {task['act']} for {task['who']} by {task['due']}",
+                f"{prefix} {task['act']} before {task['due']} for {task['who']}",
+            )
+            line = rnd.choice(variants)
+        else:
+            variants = (
+                f"{prefix} {task['act']} by {task['due']}",
+                f"{prefix} {task['act']} for {task['who']} by {task['due']}",
+                f"{prefix} {task['act']} by {task['due']} for {task['who']}",
+            )
+            line = rnd.choice(variants)
+
+        if rnd.random() < 0.35:
+            line += f" {rnd.choice(POLITE_FILLERS)}"
+
+        cue = rnd.choice(PRIORITY_CUES[task["pri"]])
+        if cue:
+            line += f" {cue}"
 
         chunks.append(line.strip())
 
-    # Add distracting side chatter to make text messy and multi-topic.
     if rnd.random() < 0.7:
         chunks.append(
             rnd.choice(
@@ -309,9 +527,6 @@ def render_actionable_text(
 
     text = " ; ".join(chunks)
     text = messify(text, rnd)
-
-    if intent == "notify" and rnd.random() < 0.4:
-        text += " and maybe ping me once done"
     return text
 
 
@@ -332,13 +547,16 @@ def render_non_actionable_text(domain: str, rnd: random.Random) -> str:
 
 
 def make_sample(domain: str, is_act: int, max_tasks: int, rnd: random.Random) -> Sample:
+    targeted = maybe_make_targeted_sample(domain=domain, is_act=is_act, rnd=rnd)
+    if targeted is not None:
+        return targeted
+
+    intent = pick_intent(is_act, rnd)
     if is_act:
         task_count = rnd.randint(1, max_tasks)
-        tasks = [pick_task(domain, rnd) for _ in range(task_count)]
+        tasks = sample_unique_tasks(domain, intent, task_count, rnd)
     else:
         tasks = []
-
-    intent = infer_intent(tasks, rnd)
     label_obj = {"is_act": int(is_act), "intent": intent, "tasks": tasks}
     label = canonical_yaml(label_obj)
 

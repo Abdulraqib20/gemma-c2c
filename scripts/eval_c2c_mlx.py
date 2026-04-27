@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import yaml
 from mlx_lm import load
@@ -72,7 +73,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-repair-schema",
         action="store_true",
-        help="Disable post-repair to measure raw cleaned generations.",
+        help="Disable post-repair. Ignored when --dual-mode is enabled.",
+    )
+    parser.add_argument(
+        "--dual-mode",
+        action="store_true",
+        help=(
+            "Run both raw (no repair) and repaired passes, writing separate predictions "
+            "and a combined report."
+        ),
     )
     parser.add_argument(
         "--report", type=Path, default=Path("reports/mlx_eval_summary.json")
@@ -83,18 +92,17 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> int:
-    args = parse_args()
-    rows = read_jsonl(args.data)
-    if args.limit > 0:
-        rows = rows[: args.limit]
-
-    if not rows:
-        raise ValueError("No rows to evaluate")
-
-    print(f"Loading model: {args.model}")
-    model, tokenizer = load(args.model)
-
+def evaluate_pass(
+    *,
+    rows: list[dict[str, Any]],
+    model: Any,
+    tokenizer: Any,
+    max_tokens: int,
+    temp: float,
+    top_p: float,
+    repair_schema: bool,
+    predictions_path: Path,
+) -> dict[str, Any]:
     parsed_ok = 0
     schema_ok = 0
     exact_ok = 0
@@ -102,8 +110,8 @@ def main() -> int:
     intent_ok = 0
     task_count_ok = 0
 
-    args.predictions.parent.mkdir(parents=True, exist_ok=True)
-    with args.predictions.open("w", encoding="utf-8") as pred_f:
+    predictions_path.parent.mkdir(parents=True, exist_ok=True)
+    with predictions_path.open("w", encoding="utf-8") as pred_f:
         for idx, row in enumerate(rows, start=1):
             text = str(row.get("text", ""))
             gold_raw = str(row.get("label", ""))
@@ -111,11 +119,11 @@ def main() -> int:
                 model,
                 tokenizer,
                 text,
-                max_tokens=args.max_tokens,
-                temp=args.temp,
-                top_p=args.top_p,
+                max_tokens=max_tokens,
+                temp=temp,
+                top_p=top_p,
                 verbose=False,
-                repair_schema=not args.no_repair_schema,
+                repair_schema=repair_schema,
             )
 
             gold_obj = None
@@ -156,18 +164,17 @@ def main() -> int:
             pred_f.write(json.dumps(record, ensure_ascii=True) + "\n")
 
             if idx % 25 == 0:
-                print(f"Processed {idx}/{len(rows)}")
+                mode = "repaired" if repair_schema else "raw"
+                print(f"[{mode}] Processed {idx}/{len(rows)}")
 
     n = len(rows)
-    summary = {
-        "model": args.model,
-        "data": str(args.data),
+    return {
         "count": n,
         "settings": {
-            "max_tokens": args.max_tokens,
-            "temp": args.temp,
-            "top_p": args.top_p,
-            "repair_schema": not args.no_repair_schema,
+            "max_tokens": max_tokens,
+            "temp": temp,
+            "top_p": top_p,
+            "repair_schema": repair_schema,
         },
         "metrics": {
             "parse_rate": round(parsed_ok / n, 4),
@@ -177,14 +184,95 @@ def main() -> int:
             "task_count_accuracy": round(task_count_ok / n, 4),
             "exact_match": round(exact_ok / n, 4),
         },
+        "predictions": str(predictions_path),
     }
+
+
+def gap_metrics(raw_metrics: dict[str, float], repaired_metrics: dict[str, float]) -> dict[str, float]:
+    keys = (
+        "parse_rate",
+        "schema_rate",
+        "is_act_accuracy",
+        "intent_accuracy",
+        "task_count_accuracy",
+        "exact_match",
+    )
+    return {k: round(repaired_metrics[k] - raw_metrics[k], 4) for k in keys}
+
+
+def main() -> int:
+    args = parse_args()
+    rows = read_jsonl(args.data)
+    if args.limit > 0:
+        rows = rows[: args.limit]
+
+    if not rows:
+        raise ValueError("No rows to evaluate")
+
+    print(f"Loading model: {args.model}")
+    model, tokenizer = load(args.model)
+
+    summary: dict[str, Any] = {
+        "model": args.model,
+        "data": str(args.data),
+        "count": len(rows),
+    }
+    if args.dual_mode:
+        raw_predictions = args.predictions.with_name(f"{args.predictions.stem}_raw{args.predictions.suffix}")
+        repaired_predictions = args.predictions.with_name(
+            f"{args.predictions.stem}_repaired{args.predictions.suffix}"
+        )
+        raw = evaluate_pass(
+            rows=rows,
+            model=model,
+            tokenizer=tokenizer,
+            max_tokens=args.max_tokens,
+            temp=args.temp,
+            top_p=args.top_p,
+            repair_schema=False,
+            predictions_path=raw_predictions,
+        )
+        repaired = evaluate_pass(
+            rows=rows,
+            model=model,
+            tokenizer=tokenizer,
+            max_tokens=args.max_tokens,
+            temp=args.temp,
+            top_p=args.top_p,
+            repair_schema=True,
+            predictions_path=repaired_predictions,
+        )
+        summary["passes"] = {
+            "raw": raw,
+            "repaired": repaired,
+            "gap_repaired_minus_raw": gap_metrics(raw["metrics"], repaired["metrics"]),
+        }
+    else:
+        single = evaluate_pass(
+            rows=rows,
+            model=model,
+            tokenizer=tokenizer,
+            max_tokens=args.max_tokens,
+            temp=args.temp,
+            top_p=args.top_p,
+            repair_schema=not args.no_repair_schema,
+            predictions_path=args.predictions,
+        )
+        summary.update(single)
 
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     print("\nEvaluation complete")
     print(json.dumps(summary, indent=2))
-    print(f"Predictions: {args.predictions}")
+    if args.dual_mode:
+        print(
+            "Predictions: "
+            f"{args.predictions.with_name(f'{args.predictions.stem}_raw{args.predictions.suffix}')}, "
+            f"{args.predictions.with_name(f'{args.predictions.stem}_repaired{args.predictions.suffix}')}"
+        )
+    else:
+        print(f"Predictions: {args.predictions}")
     print(f"Summary: {args.report}")
     return 0
 

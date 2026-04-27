@@ -14,6 +14,19 @@ import yaml
 
 INTENTS = {"remind", "schedule", "log", "notify"}
 PRIORITIES = {"H", "M", "L"}
+NON_ACTIONABLE_INTENT = "log"
+BAD_WHO_TOKENS = {"pls", "please", "thanks", "thx", "if possible", "asap", "tomorrow", "today"}
+INTENT_CUE_RULES = {
+    "remind": (r"\bremind me\b", r"\bdont let me forget\b", r"\bremember to\b"),
+    "schedule": (r"\bschedule\b", r"\bbook\b", r"\bput on my calendar\b", r"\bset up\b"),
+    "notify": (r"\bping\b", r"\bmessage\b", r"\bnotify\b", r"\btell\b", r"\blet .* know\b"),
+    "log": (r"\blog this\b", r"\bnote down\b", r"\brecord\b", r"\btrack\b", r"\bcapture\b"),
+}
+TIME_LIKE_RE = re.compile(
+    r"\b(today|tomorrow|tonight|morning|afternoon|evening|weekend|monday|tuesday|wednesday|"
+    r"thursday|friday|saturday|sunday|eod|eow|asap|next week|next month|\d{1,2}(:\d{2})?\s*(am|pm)?)\b",
+    re.IGNORECASE,
+)
 DOMAIN_HINTS = {
     "business": {
         "invoice",
@@ -182,6 +195,45 @@ def validate_rows(rows: Iterable[dict], split_name: str, max_tasks: int) -> Tupl
     return issues, parsed
 
 
+def heuristic_issues(rows: List[dict], split_name: str) -> List[str]:
+    issues: List[str] = []
+    non_actionable_bad_intent = 0
+    cue_mismatches = 0
+    who_bad_token = 0
+    who_is_time = 0
+
+    for idx, row in enumerate(rows, start=1):
+        obj = row["obj"]
+        text = row["text"].lower()
+        if obj["is_act"] == 0 and obj["intent"] != NON_ACTIONABLE_INTENT:
+            non_actionable_bad_intent += 1
+
+        for intent, patterns in INTENT_CUE_RULES.items():
+            if any(re.search(pattern, text) for pattern in patterns):
+                if obj["is_act"] == 1 and obj["intent"] != intent:
+                    cue_mismatches += 1
+                break
+
+        for task in obj["tasks"]:
+            who = task["who"].strip().lower()
+            if who in BAD_WHO_TOKENS:
+                who_bad_token += 1
+            if TIME_LIKE_RE.search(who):
+                who_is_time += 1
+
+    if non_actionable_bad_intent:
+        issues.append(
+            f"{split_name}: {non_actionable_bad_intent} non-actionable rows use intent other than {NON_ACTIONABLE_INTENT}"
+        )
+    if cue_mismatches:
+        issues.append(f"{split_name}: {cue_mismatches} rows have explicit intent cues that disagree with the label")
+    if who_bad_token:
+        issues.append(f"{split_name}: {who_bad_token} task who fields are filler tokens like pls/thanks")
+    if who_is_time:
+        issues.append(f"{split_name}: {who_is_time} task who fields look time-like")
+    return issues
+
+
 def exact_duplicate_count(rows: List[dict]) -> int:
     seen: set[str] = set()
     dups = 0
@@ -259,6 +311,8 @@ def main() -> int:
     issues: List[str] = []
     issues.extend(issues_train)
     issues.extend(issues_test)
+    issues.extend(heuristic_issues(train_rows, "train"))
+    issues.extend(heuristic_issues(test_rows, "test"))
 
     if len(train_rows_raw) != args.expected_train:
         issues.append(f"train size mismatch: got {len(train_rows_raw)} expected {args.expected_train}")
